@@ -32,8 +32,12 @@ const DEFAULT_CONFIG = {
   zoom: 1,
   theme: 'dark',
   language: 'auto',   // 'auto' (system), or one of i18n.LANGUAGES
+  timeFormat: 'auto', // 'auto' (follows the language), '12h' or '24h'
   netTotals: { rx: 0, tx: 0 },
-  bounds: null,
+  bounds: null,    // windowed position and size (of the window when NOT maximized)
+  // maximized: whether the window was maximized (windowed mode); unset until the
+  // first launch of a version that remembers it, see initialBounds().
+  settingsBounds: null,   // position and size of the settings window
   display: null,   // screen picked in "Full screen on…": { id, width, height }
   weatherSite: null,   // picked on first launch
   night: { enabled: true, dim: 0.5 },   // dims the screen from sunset to sunrise
@@ -135,22 +139,24 @@ function targetDisplay() {
 
 /** Ordinary 960 x 640 window centred on the primary screen. */
 function centeredOnPrimary() {
-  const wa = screen.getPrimaryDisplay().workArea;
-  const width = Math.min(960, wa.width);
-  const height = Math.min(640, wa.height);
-  return {
-    x: Math.round(wa.x + (wa.width - width) / 2),
-    y: Math.round(wa.y + (wa.height - height) / 2),
-    width,
-    height,
-  };
+  return display.centeredIn(screen.getPrimaryDisplay().workArea, 960, 640);
 }
 
 function initialBounds() {
   const d = config.coverTaskbar ? targetDisplay() : null;
   if (d) return d.bounds;
-  const b = config.bounds;
-  return b && display.isOnScreen(screen.getAllDisplays(), b) ? b : centeredOnPrimary();
+  const displays = screen.getAllDisplays();
+  let b = config.bounds;
+  // Up to 1.11 only the bounds were saved, so a maximized window came back as a
+  // plain one, a few pixels too high: its bounds (the work area, plus the
+  // invisible border) tell it was maximized. Done once; the size to restore to
+  // is then unknown, so a standard one is used.
+  if (!config.coverTaskbar && config.maximized === undefined) {
+    const full = b && display.maximizedOn(displays, b);
+    config.maximized = !!full;
+    if (full) config.bounds = b = display.centeredIn(full.workArea, 960, 640);
+  }
+  return b && display.isOnScreen(displays, b) ? b : centeredOnPrimary();
 }
 
 function createWindow() {
@@ -192,13 +198,26 @@ function createWindow() {
     clearTimeout(persistTimer);
     persistTimer = setTimeout(() => {
       if (mainWindow && !mainWindow.isMinimized()) {
-        config.bounds = mainWindow.getBounds();
+        // A maximized window reports the work area (and on Windows a frameless one
+        // even sticks out of it by its border): what is kept is the size to
+        // restore to, the maximized state is saved apart.
+        config.bounds = mainWindow.isMaximized() ? mainWindow.getNormalBounds() : mainWindow.getBounds();
         saveConfig();
       }
     }, 400);
   };
   mainWindow.on('resize', persist);
   mainWindow.on('move', persist);
+
+  // Remembered in windowed mode only: cover mode un-maximizes the window to
+  // fit it to the screen, which must not forget what the user chose.
+  const rememberMaximized = (on) => () => {
+    if (config.coverTaskbar || config.maximized === on) return;
+    config.maximized = on;
+    saveConfig();
+  };
+  mainWindow.on('maximize', rememberMaximized(true));
+  mainWindow.on('unmaximize', rememberMaximized(false));
 
   // Closing hides the window to the notification area; only quitApp() lets it
   // really close.
@@ -218,7 +237,109 @@ function applyLanguage() {
   const { lang, locale } = i18n.resolve(config.language, app.getPreferredSystemLanguages());
   i18n.setLanguage(lang, locale);
   refreshTrayMenu();
+  if (settingsWindow) settingsWindow.setTitle(t('settings.windowTitle'));
   return { setting: config.language, lang, locale };
+}
+
+/* ---------------- settings window ---------------- */
+
+// The settings live in their own window, apart from the dashboard: the dashboard
+// often sits on a small screen, above the taskbar, where settings are awkward to
+// use. The window is an ordinary one, that can be moved to any screen; its
+// position is remembered.
+let settingsWindow = null;
+
+function defaultSettingsBounds() {
+  return display.centeredIn(screen.getPrimaryDisplay().workArea, 560, 760);
+}
+
+/**
+ * The dashboard covers the taskbar at the highest level, so a settings window
+ * opened on the same screen would stay hidden behind it: it only goes above
+ * everything when it shares the screen of a covering dashboard.
+ */
+function updateSettingsLevel() {
+  if (!settingsWindow || settingsWindow.isDestroyed()) return;
+  let above = false;
+  if (config.coverTaskbar && mainWindow && mainWindow.isVisible()) {
+    const dash = screen.getDisplayMatching(mainWindow.getBounds()).id;
+    above = screen.getDisplayMatching(settingsWindow.getBounds()).id === dash;
+  }
+  if (above) settingsWindow.setAlwaysOnTop(true, 'screen-saver');
+  else settingsWindow.setAlwaysOnTop(false);
+}
+
+/**
+ * Opens the settings window, or brings it forward.
+ * @param {string} [focus] control to put the cursor in ('city')
+ */
+function openSettings(focus) {
+  if (settingsWindow) {
+    if (settingsWindow.isMinimized()) settingsWindow.restore();
+    settingsWindow.show();
+    settingsWindow.focus();
+    updateSettingsLevel();
+    if (focus) settingsWindow.webContents.send('focus-setting', focus);
+    return;
+  }
+  const saved = config.settingsBounds;
+  const b = saved && display.isOnScreen(screen.getAllDisplays(), saved) ? saved : defaultSettingsBounds();
+  const win = new BrowserWindow({
+    ...b,
+    minWidth: 380,
+    minHeight: 360,
+    show: false,
+    title: t('settings.windowTitle'),
+    autoHideMenuBar: true,
+    backgroundColor: THEME_BG[config.theme] || THEME_BG.dark,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  settingsWindow = win;
+  win.setMenu(null);
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (e) => e.preventDefault());
+  win.loadFile('settings.html');
+  win.once('ready-to-show', () => {
+    win.show();
+    win.focus();
+    updateSettingsLevel();
+    if (focus) win.webContents.send('focus-setting', focus);
+  });
+
+  let timer;
+  const persist = () => {
+    updateSettingsLevel();   // it may have moved to or from the dashboard's screen
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (win.isDestroyed() || win.isMinimized()) return;
+      config.settingsBounds = win.getBounds();
+      saveConfig();
+    }, 400);
+  };
+  win.on('resize', persist);
+  win.on('move', persist);
+  win.on('closed', () => {
+    clearTimeout(timer);
+    settingsWindow = null;
+  });
+}
+
+/** Sends a message to every open window (dashboard and settings). */
+function broadcast(channel, payload) {
+  for (const w of [mainWindow, settingsWindow]) {
+    if (w && !w.isDestroyed()) w.webContents.send(channel, payload);
+  }
+}
+
+/** Saves the config and tells both windows, after a change made from either. */
+function commitConfig() {
+  saveConfig();
+  broadcast('config', config);
+  return config;
 }
 
 /* ---------------- notification area ---------------- */
@@ -231,6 +352,7 @@ function showWindow() {
     // screen returns (onDisplaysChanged).
     awaitingDisplay = false;
     mainWindow.setAlwaysOnTop(false);
+    if (mainWindow.isMaximized()) mainWindow.unmaximize();
     mainWindow.setBounds(centeredOnPrimary());
     mainWindow.show();
     return;
@@ -247,10 +369,10 @@ function toggleWindow() {
   else showWindow();
 }
 
-/** Opens a panel (settings or add) in the window, from the tray menu. */
-function openPanel(name) {
+/** Opens the "add a row" panel in the dashboard window, from the tray menu. */
+function openAddPanel() {
   showWindow();
-  if (mainWindow) mainWindow.webContents.send('open-panel', name);
+  if (mainWindow) mainWindow.webContents.send('open-panel', 'add');
 }
 
 function buildTrayMenu() {
@@ -264,8 +386,8 @@ function buildTrayMenu() {
   template.push(
     { label: t('tray.toggle'), click: toggleWindow },
     { label: t('tray.refresh'), click: refreshMarkets },
-    { label: t('tray.add'), click: () => openPanel('add') },
-    { label: t('tray.settings'), click: () => openPanel('settings') },
+    { label: t('tray.add'), click: () => openAddPanel() },
+    { label: t('tray.settings'), click: () => openSettings() },
     { type: 'separator' },
     { label: t('tray.check', { version: APP_VERSION }), click: () => checkForUpdates({ manual: true }) },
     { label: t('tray.quit'), click: quitApp },
@@ -315,7 +437,10 @@ function placeWindow(reveal = false) {
   if (!config.coverTaskbar) {
     awaitingDisplay = false;
     mainWindow.setAlwaysOnTop(false);
+    // Back from cover mode, or startup: take up the maximized state again.
+    if (config.maximized && !mainWindow.isMaximized()) mainWindow.maximize();
     if (wantVisible) mainWindow.show();
+    updateSettingsLevel();
     return;
   }
   const d = targetDisplay();
@@ -325,9 +450,12 @@ function placeWindow(reveal = false) {
     return;
   }
   awaitingDisplay = false;
+  // A maximized window ignores the bounds on some systems.
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
   mainWindow.setBounds(d.bounds);
   if (wantVisible) showWindow();
   else mainWindow.setAlwaysOnTop(true, 'screen-saver');
+  updateSettingsLevel();
 }
 
 // Plugging a screen fires a burst of events: wait for the last one.
@@ -427,16 +555,20 @@ async function refreshWeather() {
 let lastSun = null;
 let nightTimer;
 
+// Last state sent: the settings window asks for it when it opens.
+let lastNight = null;
+
 function applyNight() {
   if (!mainWindow) return;
   const win = weather.nightWindow(Date.now(), lastSun);
-  mainWindow.webContents.send('night', {
+  lastNight = {
     on: config.night.enabled && !!win?.on,
     dim: config.night.dim,
     from: win?.from ?? null,
     until: win?.until ?? null,
     current: !!win?.on,
-  });
+  };
+  broadcast('night', lastNight);
 }
 
 /* ---------------- updates ---------------- */
@@ -654,11 +786,20 @@ ipcMain.handle('get-language', () => ({
   ...i18n.resolve(config.language, app.getPreferredSystemLanguages()),
 }));
 ipcMain.handle('show-menu', () => showMenu());
+ipcMain.handle('get-night', () => lastNight);
+ipcMain.handle('open-settings', (_e, focus) => openSettings(focus === 'city' ? focus : undefined));
 
 ipcMain.handle('set-language', (_e, setting) => {
   config.language = setting === 'auto' || i18n.LANGUAGES.includes(setting) ? setting : 'auto';
   saveConfig();
-  return applyLanguage();
+  const res = applyLanguage();
+  broadcast('language', res);
+  return res;
+});
+
+ipcMain.handle('set-time-format', (_e, setting) => {
+  config.timeFormat = i18n.TIME_FORMATS.includes(setting) ? setting : 'auto';
+  return commitConfig();
 });
 ipcMain.handle('get-catalogs', () => ({
   metals: markets.METALS,
@@ -668,9 +809,8 @@ ipcMain.handle('get-catalogs', () => ({
 ipcMain.handle('set-refresh', (_e, ms) => {
   // Lower bound: below it, the keyless sources end up refusing requests.
   config.refreshMs = Math.min(3600000, Math.max(5000, Number(ms) || DEFAULT_CONFIG.refreshMs));
-  saveConfig();
   restartMarketTimer();
-  return config;
+  return commitConfig();
 });
 
 /** Connected screens, so the user can pick where to show the dashboard. */
@@ -699,9 +839,8 @@ ipcMain.handle('snap-to-display', (_e, displayId) => {
   config.display = display.displayKey(d);
   config.coverTaskbar = true;
   config.bounds = d.bounds;
-  saveConfig();
   placeWindow();
-  return config;
+  return commitConfig();
 });
 
 /**
@@ -712,6 +851,9 @@ ipcMain.handle('snap-to-display', (_e, displayId) => {
 ipcMain.handle('set-resolution', (_e, { width, height }) => {
   if (!mainWindow) return config;
   config.coverTaskbar = false;
+  // An explicit size replaces the maximized state.
+  config.maximized = false;
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
   mainWindow.setAlwaysOnTop(false);
   const d = screen.getDisplayMatching(mainWindow.getBounds());
   const w = Math.min(width, d.bounds.width);
@@ -721,8 +863,8 @@ ipcMain.handle('set-resolution', (_e, { width, height }) => {
   const y = Math.min(Math.max(cur.y, d.bounds.y), d.bounds.y + d.bounds.height - h);
   mainWindow.setBounds({ x, y, width: w, height: h });
   config.bounds = { x, y, width: w, height: h };
-  saveConfig();
-  return config;
+  updateSettingsLevel();
+  return commitConfig();
 });
 
 /**
@@ -769,15 +911,13 @@ ipcMain.handle('set-auto-launch', (_e, on) => {
 
 ipcMain.handle('set-theme', (_e, name) => {
   config.theme = Object.hasOwn(THEME_BG, name) ? name : 'dark';
-  saveConfig();
-  return config;
+  return commitConfig();
 });
 
 ipcMain.handle('set-zoom', (_e, z) => {
   config.zoom = Math.min(2.5, Math.max(0.8, Number(z) || 1));
-  saveConfig();
   if (mainWindow) mainWindow.webContents.setZoomFactor(config.zoom);
-  return config;
+  return commitConfig();
 });
 
 ipcMain.handle('set-cover-taskbar', (_e, on) => {
@@ -787,9 +927,8 @@ ipcMain.handle('set-cover-taskbar', (_e, on) => {
   if (config.coverTaskbar && mainWindow && !targetDisplay()) {
     config.display = display.displayKey(screen.getDisplayMatching(mainWindow.getBounds()));
   }
-  saveConfig();
   placeWindow();
-  return config;
+  return commitConfig();
 });
 
 ipcMain.handle('add-item', (_e, raw) => {
@@ -847,9 +986,8 @@ ipcMain.handle('set-night', (_e, { enabled, dim } = {}) => {
     enabled: enabled === undefined ? config.night.enabled : !!enabled,
     dim: Number.isFinite(level) ? Math.min(0.9, Math.max(0.1, level)) : config.night.dim,
   };
-  saveConfig();
   applyNight();
-  return config;
+  return commitConfig();
 });
 
 ipcMain.handle('search-places', async (_e, q) => {
@@ -871,7 +1009,6 @@ ipcMain.handle('set-weather-site', (_e, site) => {
     // IANA time zone of the city (weather day, min/max); Open-Meteo guesses it otherwise.
     timezone: /^[A-Za-z_+\-]+(\/[A-Za-z0-9_+\-]+)*$/.test(site.timezone || '') ? site.timezone : 'auto',
   };
-  saveConfig();
   refreshWeather();
-  return config;
+  return commitConfig();
 });

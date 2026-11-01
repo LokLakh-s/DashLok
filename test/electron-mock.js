@@ -29,23 +29,64 @@ function createMock({ displays, primaryId, userData, locales }) {
   const handlers = {};
   let window = null;
 
+  const windows = [];
+  let menuTemplate = [];
+
   class BrowserWindow {
     constructor(opts) {
       this.bounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height };
+      this.opts = opts;
       this.visible = opts.show !== false;
       this.onTop = false;
+      this.maximized = false;
+      this.normalBounds = null;
+      this.destroyed = false;
+      this.title = opts.title;
       this.events = {};
-      this.webContents = { send() {}, once() {}, on() {}, setZoomFactor() {}, setWindowOpenHandler() {} };
-      window = this;
+      this.sent = [];   // [channel, payload] sent to the page
+      this.webContents = {
+        send: (channel, payload) => this.sent.push([channel, payload]),
+        once() {}, on() {}, setZoomFactor() {}, setWindowOpenHandler() {},
+      };
+      windows.push(this);
+      // The first window is the dashboard.
+      if (!window) window = this;
     }
-    loadFile() {}
+    loadFile(file) { this.file = file; }
     on(event, cb) { on(this.events)(event, cb); }
+    once(event, cb) { on(this.events)(event, cb); }
+    emit(event) { emit(this.events, event); }
     getBounds() { return { ...this.bounds }; }
     setBounds(b) { this.bounds = { ...b }; }
+    // Like Windows: the maximized bounds are the work area and its invisible border.
+    maximize() {
+      if (this.maximized) return;
+      this.normalBounds = { ...this.bounds };
+      const wa = screen.getDisplayMatching(this.bounds).workArea;
+      this.bounds = { x: wa.x - 8, y: wa.y - 8, width: wa.width + 16, height: wa.height + 16 };
+      this.maximized = true;
+      this.emit('maximize');
+      this.emit('resize');
+    }
+    unmaximize() {
+      if (!this.maximized) return;
+      this.bounds = this.normalBounds;
+      this.maximized = false;
+      this.emit('unmaximize');
+      this.emit('resize');
+    }
+    isMaximized() { return this.maximized; }
+    getNormalBounds() { return { ...(this.maximized ? this.normalBounds : this.bounds) }; }
     isVisible() { return this.visible; }
     isMinimized() { return false; }
+    isDestroyed() { return this.destroyed; }
     show() { this.visible = true; }
     hide() { this.visible = false; }
+    focus() { this.focused = true; }
+    restore() {}
+    setMenu() {}
+    setTitle(title) { this.title = title; }
+    close() { this.emit('close'); this.destroyed = true; this.visible = false; this.emit('closed'); }
     setAlwaysOnTop(flag, level) { this.onTop = flag ? level || 'floating' : false; }
   }
 
@@ -77,7 +118,7 @@ function createMock({ displays, primaryId, userData, locales }) {
     screen,
     globalShortcut: { register() {} },
     Tray: class { constructor() {} setToolTip() {} setContextMenu() {} on(e, cb) { on(trayEvents)(e, cb); } },
-    Menu: { buildFromTemplate: (t) => t },
+    Menu: { buildFromTemplate: (t) => { menuTemplate = t; return t; } },
     nativeImage: { createFromPath: () => ({ isEmpty: () => true }), createEmpty: () => ({}) },
     shell: { openExternal() {} },
     dialog: { showMessageBox: async () => ({ response: 1 }), showErrorBox() {} },
@@ -89,6 +130,9 @@ function createMock({ displays, primaryId, userData, locales }) {
   return {
     electron,
     get window() { return window; },
+    windows,
+    /** The settings window, when open. */
+    get settings() { return windows.find((w) => w.file === 'settings.html' && !w.destroyed) || null; },
     displays,
     /** Adds or removes a screen then notifies the app, like Windows does. */
     plug(d) { displays.push(d); emit(screenEvents, 'display-added', {}, d); },
@@ -98,6 +142,8 @@ function createMock({ displays, primaryId, userData, locales }) {
       emit(screenEvents, 'display-removed', {}, d);
     },
     clickTray: () => emit(trayEvents, 'click'),
+    /** Items of the last tray menu built. */
+    trayMenu: () => menuTemplate,
     invoke: (name, ...args) => handlers[name]({}, ...args),
   };
 }

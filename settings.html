@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Nothing external and no inline script: text from an API cannot run. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'" />
+  <title>DashLok — Settings</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <!-- Own window of the settings (see openSettings() in main.js). Texts carry
+       their i18n key (data-i18n, data-i18n-placeholder); the English text here is
+       replaced at startup in the interface language. -->
+  <main class="sPage">
+
+    <!-- ================= appearance ================= -->
+    <section class="sCard">
+      <h2 class="sTitle" data-i18n="settings.sec.appearance">Appearance</h2>
+
+      <div class="fLabel" data-i18n="settings.theme">Theme</div>
+      <div class="chips" id="themes">
+        <button class="chip" data-theme="dark" data-i18n="theme.dark">Dark</button>
+        <button class="chip" data-theme="light" data-i18n="theme.light">Light</button>
+        <button class="chip" data-theme="red" data-i18n="theme.red">Red</button>
+        <button class="chip" data-theme="forest" data-i18n="theme.forest">Forest green</button>
+        <button class="chip" data-theme="green" data-i18n="theme.green">Green</button>
+        <button class="chip" data-theme="yellow" data-i18n="theme.yellow">Yellow</button>
+        <button class="chip" data-theme="purple" data-i18n="theme.purple">Purple</button>
+      </div>
+
+      <div class="fLabel" data-i18n="settings.zoom">Dashboard zoom</div>
+      <div class="chips" id="zooms">
+        <button class="chip" data-z="1">100 %</button>
+        <button class="chip" data-z="1.15">115 %</button>
+        <button class="chip" data-z="1.3">130 %</button>
+        <button class="chip" data-z="1.5">150 %</button>
+        <button class="chip" data-z="1.75">175 %</button>
+      </div>
+
+      <!-- Language names stay in their own language. -->
+      <div class="fLabel" data-i18n="settings.language">Language</div>
+      <div class="chips" id="languages">
+        <button class="chip" data-lang="auto" data-i18n="settings.auto">Automatic</button>
+        <button class="chip" data-lang="en" lang="en">English</button>
+        <button class="chip" data-lang="fr" lang="fr">Français</button>
+      </div>
+
+      <div class="fLabel" data-i18n="settings.timeFormat">Time format</div>
+      <div class="chips" id="timeFormats">
+        <button class="chip" data-tf="auto" data-i18n="settings.auto">Automatic</button>
+        <button class="chip" data-tf="12h" data-i18n="settings.time12">12 h (AM/PM)</button>
+        <button class="chip" data-tf="24h" data-i18n="settings.time24">24 h</button>
+      </div>
+    </section>
+
+    <!-- ================= screen and window ================= -->
+    <section class="sCard">
+      <h2 class="sTitle" data-i18n="settings.sec.screen">Screen and window</h2>
+
+      <div class="fLabel" data-i18n="settings.screen">Full screen on…</div>
+      <div class="dispList" id="dispList"></div>
+
+      <label class="switchRow">
+        <span data-i18n="settings.cover">Cover the taskbar</span>
+        <input type="checkbox" id="coverTgl" />
+        <span class="switch"></span>
+      </label>
+
+      <div class="fLabel sGap" data-i18n="settings.windowSize">Windowed size</div>
+      <div class="chips" id="resList">
+        <button class="chip" data-w="960" data-h="640">960 &times; 640</button>
+        <button class="chip" data-w="800" data-h="600">800 &times; 600</button>
+        <button class="chip" data-w="1024" data-h="600">1024 &times; 600</button>
+        <button class="chip" data-w="1280" data-h="720">1280 &times; 720</button>
+        <button class="chip" data-w="640" data-h="480">640 &times; 480</button>
+      </div>
+      <p class="hint" data-i18n="settings.windowHint">Picking a size switches to a normal window. DashLok remembers where it was, and whether it was maximized.</p>
+    </section>
+
+    <!-- ================= night mode ================= -->
+    <section class="sCard">
+      <h2 class="sTitle" data-i18n="settings.sec.night">Night mode</h2>
+
+      <label class="switchRow first">
+        <span data-i18n="settings.nightToggle">Dim from sunset to sunrise</span>
+        <input type="checkbox" id="nightTgl" />
+        <span class="switch"></span>
+      </label>
+      <p class="hint" id="nightHint"></p>
+
+      <div class="fLabel sGap" data-i18n="settings.nightDim">Dim by</div>
+      <div class="chips" id="nightDims">
+        <button class="chip" data-dim="0.3">30 %</button>
+        <button class="chip" data-dim="0.5">50 %</button>
+        <button class="chip" data-dim="0.7">70 %</button>
+      </div>
+    </section>
+
+    <!-- ================= weather ================= -->
+    <section class="sCard">
+      <h2 class="sTitle" data-i18n="settings.sec.weather">Weather</h2>
+
+      <div class="fLabel"><span data-i18n="settings.city">City</span> · <span id="siteNow" class="siteNow">--</span></div>
+      <input class="input" id="siteSearch" data-i18n-placeholder="settings.citySearch" placeholder="Search for a city…" autocomplete="off" />
+      <ul class="results" id="siteResults"></ul>
+    </section>
+
+    <!-- ================= markets ================= -->
+    <section class="sCard">
+      <h2 class="sTitle" data-i18n="settings.sec.markets">Markets</h2>
+
+      <div class="fLabel" data-i18n="settings.refresh">Quotes refresh</div>
+      <div class="chips" id="intervals">
+        <button class="chip" data-ms="10000">10 s</button>
+        <button class="chip" data-ms="20000">20 s</button>
+        <button class="chip" data-ms="30000">30 s</button>
+        <button class="chip" data-ms="60000">1 min</button>
+        <button class="chip" data-ms="300000">5 min</button>
+      </div>
+      <p class="hint" data-i18n="settings.sysHint">System metrics (CPU, RAM, GPU, network) update every second, whatever this setting.</p>
+    </section>
+
+    <!-- ================= application ================= -->
+    <section class="sCard">
+      <h2 class="sTitle" data-i18n="settings.sec.app">Application</h2>
+
+      <label class="switchRow first">
+        <span data-i18n="settings.autostart">Start at login</span>
+        <input type="checkbox" id="autoTgl" />
+        <span class="switch"></span>
+      </label>
+    </section>
+
+  </main>
+
+  <script src="i18n.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

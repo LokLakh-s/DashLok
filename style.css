@@ -605,8 +605,6 @@ html, body {
   pointer-events: none;
   transition: opacity 3s ease;
 }
-.nightRow { margin-top: 0.2rem; border-top: none; padding-top: 0; }
-#nightHint { margin: 0 0 0.6rem; }
 
 /* ================= overlays ================= */
 
@@ -725,7 +723,6 @@ select.input { cursor: pointer; }
 .results .rsAdd { margin-left: auto; color: var(--accent); font-size: 1.4rem; }
 .results .rsNone { color: var(--faint); cursor: default; }
 .results .rsNone:hover { background: none; }
-#siteResults { margin-bottom: 0.6rem; }
 
 .primary {
   width: 100%; min-height: 2.5rem; margin-top: 0.6rem;

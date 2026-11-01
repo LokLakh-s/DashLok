@@ -52,8 +52,12 @@ test('everything the app loads is packaged', () => {
   };
   visit('main.js');
   seen.add('preload.js');
-  for (const [, ref] of read('index.html').matchAll(/(?:src|href)="([\w./-]+)"/g)) seen.add(ref);
-  for (const [, ref] of read('style.css').matchAll(/url\("([\w./-]+)"\)/g)) seen.add(ref);
+  for (const page of ['index.html', 'settings.html']) {
+    for (const [, ref] of read(page).matchAll(/(?:src|href)="([\w./-]+)"/g)) seen.add(ref);
+  }
+  for (const css of ['style.css', 'settings.css']) {
+    for (const [, ref] of read(css).matchAll(/url\("([\w./-]+)"\)/g)) seen.add(ref);
+  }
   // Tray icons picked per platform in main.js, and the Retina variant.
   for (const [, icon] of read('main.js').matchAll(/'((?:tray[\w-]*\.png)|icon\.ico)'/g)) seen.add(`build/${icon}`);
   seen.add('build/tray@2x.png');
@@ -159,7 +163,8 @@ test('night mode: from sunset to sunrise', () => {
 
 test('everything the page calls is exposed by preload.js', () => {
   // A missing function throws at load time: blank page.
-  const used = new Set([...read('renderer.js').matchAll(/window\.dash\.(\w+)/g)].map((m) => m[1]));
+  const used = new Set(['renderer.js', 'settings.js']
+    .flatMap((f) => [...read(f).matchAll(/window\.dash\.(\w+)/g)].map((m) => m[1])));
   const exposed = new Set([...read('preload.js').matchAll(/^\s+(\w+):/gm)].map((m) => m[1]));
   const missing = [...used].filter((f) => !exposed.has(f));
   assert.deepEqual(missing, []);
@@ -212,8 +217,10 @@ test('translations: same keys in every language, every key used exists', () => {
   for (const lang of i18n.LANGUAGES) assert.deepEqual(Object.keys(STRINGS[lang]).sort(), keys, lang);
 
   const used = new Set();
-  for (const [, key] of read('index.html').matchAll(/data-i18n(?:-title|-placeholder)?="([^"]+)"/g)) used.add(key);
-  for (const f of ['main.js', 'renderer.js', 'markets.js', 'updates.js']) {
+  for (const page of ['index.html', 'settings.html']) {
+    for (const [, key] of read(page).matchAll(/data-i18n(?:-title|-placeholder)?="([^"]+)"/g)) used.add(key);
+  }
+  for (const f of ['main.js', 'renderer.js', 'settings.js', 'markets.js', 'updates.js']) {
     for (const [, key] of read(f).matchAll(/\bt\(\s*'([^']+)'/g)) used.add(key);
   }
   // Keys built at run time.
@@ -223,7 +230,7 @@ test('translations: same keys in every language, every key used exists', () => {
   for (const range of Object.keys(PERIODS)) used.add(`range.${range}`);
   for (const code of WMO_CODES) used.add(`wmo.${code}`);
   for (const level of ['low', 'possible', 'high']) used.add(`storm.${level}`);
-  for (const [, theme] of read('index.html').matchAll(/data-theme="([^"]+)"/g)) used.add(`theme.${theme}`);
+  for (const [, theme] of read('settings.html').matchAll(/data-theme="([^"]+)"/g)) used.add(`theme.${theme}`);
   for (const key of used) assert.ok(key in STRINGS.en, `missing translation: ${key}`);
 });
 
@@ -493,4 +500,31 @@ test('history: ping kept, a lost answer as a gap', () => {
   assert.equal(m.ping[0], 12);
   assert.ok(Number.isNaN(m.ping[1]));
   assert.equal(m.ping[2], 14);
+});
+
+test('time format: AM/PM or 24 h on request, midnight as 00', () => {
+  const { timeOptions } = require('../i18n');
+  const at = (locale, setting, h, m = 5) =>
+    new Date(2000, 0, 1, h, m).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', ...timeOptions(setting) });
+  assert.equal(at('en-US', 'auto', 15, 45), '3:45 PM', 'automatic: the locale decides');
+  assert.equal(at('fr-FR', 'auto', 15, 45), '15:45');
+  assert.equal(at('en-US', '24h', 15, 45), '15:45');
+  assert.equal(at('fr-FR', '12h', 15, 45), '3:45 PM');
+  assert.match(at('en-US', '24h', 0), /^0?0:05$/, 'never 24:05');
+  assert.match(at('fr-FR', '24h', 0), /^0?0:05$/);
+  assert.equal(at('en-US', '12h', 0), '12:05 AM');
+  assert.deepEqual(timeOptions('whatever'), {});
+});
+
+test('maximized window: bounds of the work area and its border, nothing else', () => {
+  const { maximizedOn, centeredIn } = require('../display');
+  const d = { id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 }, workArea: { x: 0, y: 0, width: 1920, height: 1040 } };
+  const right = { id: 2, bounds: { x: 1920, y: 0, width: 960, height: 640 }, workArea: { x: 1920, y: 0, width: 960, height: 600 } };
+  assert.equal(maximizedOn([d, right], { x: -8, y: -8, width: 1936, height: 1056 }), d, 'with the invisible border');
+  assert.equal(maximizedOn([d, right], { x: 0, y: 0, width: 1920, height: 1040 }), d, 'exact');
+  assert.equal(maximizedOn([d, right], { x: 1912, y: -8, width: 976, height: 616 }), right, 'on the other screen');
+  assert.equal(maximizedOn([d, right], { x: 100, y: 100, width: 800, height: 600 }), null);
+  assert.equal(maximizedOn([d], { x: 0, y: 0, width: 1920, height: 1080 }), null, 'covering the taskbar is not maximized');
+  assert.deepEqual(centeredIn(d.workArea, 960, 640), { x: 480, y: 200, width: 960, height: 640 });
+  assert.deepEqual(centeredIn({ x: 10, y: 20, width: 500, height: 400 }, 960, 640), { x: 10, y: 20, width: 500, height: 400 });
 });

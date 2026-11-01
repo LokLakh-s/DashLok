@@ -173,26 +173,36 @@
       'add.crypto': 'Crypto',
       'add.pair': 'Add the pair',
 
-      'settings.title': 'Settings',
+      'settings.windowTitle': 'DashLok — Settings',
+      'settings.sec.appearance': 'Appearance',
+      'settings.sec.screen': 'Screen and window',
+      'settings.sec.night': 'Night mode',
+      'settings.sec.weather': 'Weather',
+      'settings.sec.markets': 'Markets',
+      'settings.sec.app': 'Application',
       'settings.theme': 'Theme',
       ...prefix('theme', {
         dark: 'Dark', light: 'Light', red: 'Red', forest: 'Forest green', green: 'Green',
         yellow: 'Yellow', purple: 'Purple',
       }),
+      'settings.zoom': 'Dashboard zoom',
       'settings.language': 'Language',
-      'settings.languageAuto': 'Automatic',
+      'settings.auto': 'Automatic',
+      'settings.timeFormat': 'Time format',
+      'settings.time12': '12 h (AM/PM)',
+      'settings.time24': '24 h',
       'settings.screen': 'Full screen on…',
+      'settings.cover': 'Cover the taskbar',
       'settings.windowSize': 'Windowed size',
-      'settings.zoom': 'Display size',
-      'settings.nightDim': 'Night mode · dim by',
+      'settings.windowHint': 'Picking a size switches to a normal window. DashLok remembers where it was, and whether it was maximized.',
       'settings.nightToggle': 'Dim from sunset to sunrise',
-      'settings.city': 'Weather city',
+      'settings.nightDim': 'Dim by',
+      'settings.city': 'City',
       'settings.citySearch': 'Search for a city…',
       'settings.noCity': 'No city found',
-      'settings.refresh': 'Market refresh',
-      'settings.cover': 'Cover the taskbar',
-      'settings.autostart': 'Start at login',
+      'settings.refresh': 'Quotes refresh',
       'settings.sysHint': 'System metrics (CPU, RAM, GPU, network) update every second, whatever this setting.',
+      'settings.autostart': 'Start at login',
 
       'menu.button': 'Menu (or right-click)',
     },
@@ -339,26 +349,36 @@
       'add.crypto': 'Crypto',
       'add.pair': 'Ajouter la paire',
 
-      'settings.title': 'Réglages',
+      'settings.windowTitle': 'DashLok — Réglages',
+      'settings.sec.appearance': 'Apparence',
+      'settings.sec.screen': 'Écran et fenêtre',
+      'settings.sec.night': 'Mode nuit',
+      'settings.sec.weather': 'Météo',
+      'settings.sec.markets': 'Marchés',
+      'settings.sec.app': 'Application',
       'settings.theme': 'Thème',
       ...prefix('theme', {
         dark: 'Sombre', light: 'Clair', red: 'Rouge', forest: 'Vert forêt', green: 'Vert',
         yellow: 'Jaune', purple: 'Violet',
       }),
+      'settings.zoom': 'Zoom du tableau de bord',
       'settings.language': 'Langue',
-      'settings.languageAuto': 'Automatique',
+      'settings.auto': 'Automatique',
+      'settings.timeFormat': 'Format de l\'heure',
+      'settings.time12': '12 h (AM/PM)',
+      'settings.time24': '24 h',
       'settings.screen': 'Plein écran sur…',
+      'settings.cover': 'Recouvrir la barre des tâches',
       'settings.windowSize': 'Résolution fenêtrée',
-      'settings.zoom': 'Taille de l\'affichage',
-      'settings.nightDim': 'Mode nuit · assombrir de',
+      'settings.windowHint': 'Choisir une taille repasse en fenêtre normale. DashLok retient où elle était, et si elle était maximisée.',
       'settings.nightToggle': 'Assombrir du coucher au lever du soleil',
-      'settings.city': 'Ville météo',
+      'settings.nightDim': 'Assombrir de',
+      'settings.city': 'Ville',
       'settings.citySearch': 'Rechercher une ville…',
       'settings.noCity': 'Aucune ville trouvée',
-      'settings.refresh': 'Rafraîchissement des marchés',
-      'settings.cover': 'Recouvrir la barre des tâches',
-      'settings.autostart': 'Démarrer à l\'ouverture de session',
+      'settings.refresh': 'Rafraîchissement des cours',
       'settings.sysHint': 'Le système (CPU, RAM, GPU, réseau) se met à jour chaque seconde, indépendamment de ce réglage.',
+      'settings.autostart': 'Démarrer à l\'ouverture de session',
 
       'menu.button': 'Menu (ou clic droit)',
     },
@@ -399,9 +419,24 @@
     return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : s;
   }
 
+  /** Time formats of the settings; 'auto' follows the locale (AM/PM in English, 24 h in French). */
+  const TIME_FORMATS = ['auto', '12h', '24h'];
+
+  /**
+   * Intl options for a time format setting. `hourCycle` rather than `hour12`:
+   * `hour12: false` prints midnight as "24:05" in some locales.
+   */
+  function timeOptions(setting) {
+    if (setting === '12h') return { hourCycle: 'h12' };
+    if (setting === '24h') return { hourCycle: 'h23' };
+    return {};
+  }
+
   return {
     STRINGS,
     LANGUAGES,
+    TIME_FORMATS,
+    timeOptions,
     resolve,
     setLanguage,
     t,

@@ -51,4 +51,30 @@ function isOnScreen(displays, b) {
     b.x < d.x + d.width && b.x + b.width > d.x && b.y < d.y + d.height && b.y + b.height > d.y);
 }
 
-module.exports = { findTargetDisplay, isDashboardShaped, displayKey, isOnScreen };
+/**
+ * Screen whose work area the rectangle `b` fills, to within the width of a
+ * window border. Before DashLok remembered the maximized state, a maximized
+ * window was saved as its bounds, which on Windows stick out of the work area
+ * by the invisible border (-8, -8 and 16 px larger): those bounds are the trace
+ * of a maximized window. null when `b` is an ordinary window.
+ */
+function maximizedOn(displays, b, tolerance = 16) {
+  const near = (a, c, tol) => Math.abs(a - c) <= tol;
+  return displays.find(({ workArea: w }) =>
+    near(b.x, w.x, tolerance) && near(b.y, w.y, tolerance)
+    && near(b.width, w.width, 2 * tolerance) && near(b.height, w.height, 2 * tolerance)) || null;
+}
+
+/** Rectangle of the given size centred in `area`, clamped to it. */
+function centeredIn(area, width, height) {
+  const w = Math.min(width, area.width);
+  const h = Math.min(height, area.height);
+  return {
+    x: Math.round(area.x + (area.width - w) / 2),
+    y: Math.round(area.y + (area.height - h) / 2),
+    width: w,
+    height: h,
+  };
+}
+
+module.exports = { findTargetDisplay, isDashboardShaped, displayKey, isOnScreen, maximizedOn, centeredIn };

@@ -66,19 +66,26 @@ GPU load, memory and temperature, network rates and ping with average and peak.
 </p>
 
 **Comfort** — English and French (following the system, or picked in the
-settings), 7 muted themes, zoom from 100 to 175 %, night mode (dims the screen
-from sunset to sunrise at the weather city), start at login.
+settings), 12-hour (AM/PM) or 24-hour time, 7 muted themes, zoom from 100 to
+175 %, night mode (dims the screen from sunset to sunrise at the weather city),
+start at login.
+
+**Settings** — they open in their own window (tray menu → *Settings…*), apart
+from the dashboard: move it to any screen while the dashboard stays full screen
+on its small one. Changes apply to the dashboard at once.
 
 **Screens** — the screen chosen in the settings is remembered. If it is missing
 (not detected yet at login, unplugged), the window waits hidden instead of
-covering your main screen, and comes back with it.
+covering your main screen, and comes back with it. In a normal window,
+DashLok remembers its position, size and whether it was maximized, and starts the
+same way.
 
 <p align="center">
   <img src="docs/screenshots/weather-detail.png" width="360" alt="Next 24 hours: temperature and feels-like, rain chance, wind and gusts, hour by hour">
   <img src="docs/screenshots/chart.png" width="360" alt="Full-screen gold chart over one week">
 </p>
 <p align="center">
-  <img src="docs/screenshots/settings.png" width="360" alt="Settings: themes, target screen, resolution, zoom, night mode">
+  <img src="docs/screenshots/settings.png" width="360" alt="Settings window: appearance, screen and window, night mode, weather, markets, application">
 </p>
 
 ### Which screens?
@@ -229,7 +236,7 @@ second would cost too much (PowerShell takes ~0.8 s to start):
 | Ping | `ping.exe`, one process (any Windows language) | `ping`, one process | `ping`, one process |
 
 ```
-main.js       main process: window, screens, tray, IPC, settings, updates
+main.js       main process: windows, screens, tray, IPC, settings, updates
 display.js    picks the screen to cover
 markets.js    market sources and chart normalisation
 weather.js    Open-Meteo weather and icon choice
@@ -241,7 +248,8 @@ autostart.js  start at login on Linux (XDG autostart entry)
 updates.js    finds and downloads releases
 updater.js    swaps the app archive after exit (runs outside the app)
 preload.js    IPC bridge (context isolation on)
-renderer.js   rendering: badges, charts, history views, settings
+renderer.js   dashboard rendering: badges, charts, history views
+settings.*    the settings window (page, script, style)
 charts.js     time-series charts on canvas
 i18n.js       interface strings (English, French), shared by main and page
 style.css     themes, type scale, landscape / bar / portrait layouts

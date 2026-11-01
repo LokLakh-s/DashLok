@@ -46,7 +46,8 @@ function num(v, digits) {
 /** Byte units of the interface language: B, kB, MB, GB, TB (o, ko, Mo, Go, To in French). */
 const units = () => t('units.bytes').split(',');
 
-const fmtTime = (ms, opts) => new Date(ms).toLocaleTimeString(i18n.locale, opts);
+// 12 h / 24 h of the settings ('auto' follows the language), for every time shown.
+const fmtTime = (ms, opts) => new Date(ms).toLocaleTimeString(i18n.locale, { ...opts, ...i18n.timeOptions(config.timeFormat) });
 
 function fmtPrice(v) {
   if (v == null) return '--';
@@ -259,7 +260,7 @@ window.dash.onQuotes((d) => {
 
 function tickClock() {
   const d = new Date();
-  $('clockTime').textContent = d.toLocaleTimeString(i18n.locale);
+  $('clockTime').textContent = fmtTime(d);
   $('dateDay').textContent = d.toLocaleDateString(i18n.locale, { weekday: 'long' });
   $('dateFull').textContent = d.toLocaleDateString(i18n.locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
@@ -594,21 +595,13 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------------- panels (tray menu) ---------------- */
 
-async function openSettings() {
-  syncSettings();
-  buildDisplayList();
-  $('setOv').hidden = false;
-  // Read from the OS at each opening: the entry may have been disabled from Task
-  // Manager in the meantime.
-  $('autoTgl').checked = await window.dash.getAutoLaunch();
-}
-
 function openAdd() {
   buildMetalPicker();
   $('addOv').hidden = false;
 }
 
-window.dash.onOpenPanel((name) => (name === 'add' ? openAdd() : openSettings()));
+// The tray menu only asks the dashboard for this panel: the settings have their own window.
+window.dash.onOpenPanel((name) => { if (name === 'add') openAdd(); });
 
 // Reset in two clicks: the first arms the button for 3 s.
 let purgeTimer;
@@ -630,159 +623,40 @@ $('purgeBtn').addEventListener('click', async (e) => {
   await window.dash.resetNetTotals();
 });
 
-/* ---------------- settings ---------------- */
+/* ---------------- settings (their own window: settings.js) ---------------- */
 
-function syncSettings() {
-  document.querySelectorAll('#intervals .chip').forEach((c) =>
-    c.classList.toggle('active', Number(c.dataset.ms) === config.refreshMs)
-  );
-  document.querySelectorAll('#zooms .chip').forEach((c) =>
-    c.classList.toggle('active', Math.abs(Number(c.dataset.z) - (config.zoom || 1)) < 0.01)
-  );
-  document.querySelectorAll('#themes .chip').forEach((c) =>
-    c.classList.toggle('active', c.dataset.theme === (config.theme || 'dark'))
-  );
-  document.querySelectorAll('#languages .chip').forEach((c) =>
-    c.classList.toggle('active', c.dataset.lang === (config.language || 'auto'))
-  );
-  const bw = config.bounds?.width;
-  const bh = config.bounds?.height;
-  document.querySelectorAll('#resList .chip').forEach((c) =>
-    c.classList.toggle('active', Number(c.dataset.w) === bw && Number(c.dataset.h) === bh)
-  );
-  $('coverTgl').checked = !!config.coverTaskbar;
-  $('siteNow').textContent = config.weatherSite?.label || '--';
-  $('nightTgl').checked = !!config.night?.enabled;
-  document.querySelectorAll('#nightDims .chip').forEach((c) =>
-    c.classList.toggle('active', Math.abs(Number(c.dataset.dim) - (config.night?.dim ?? 0.5)) < 0.01)
-  );
-}
-
-$('themes').addEventListener('click', async (e) => {
-  const b = e.target.closest('.chip');
-  if (!b) return;
-  document.documentElement.dataset.theme = b.dataset.theme;
+function applyTheme(name) {
+  document.documentElement.dataset.theme = name;
   themeColors = null;   // the cached palette is no longer valid
   spark = null;         // the SVG has the old colours hard-coded
-  config = await window.dash.setTheme(b.dataset.theme);
-  syncSettings();
   drawNetSpark();
   drawWeatherBg();
   if (!$('chartOv').hidden) loadChart();
-});
-
-/** Detected screens; a click shows the dashboard full screen on it. */
-async function buildDisplayList() {
-  const list = $('dispList');
-  const displays = await window.dash.getDisplays();
-  list.innerHTML = '';
-  for (const d of displays) {
-    const b = document.createElement('button');
-    b.className = 'dispBtn' + (d.current ? ' current' : '');
-    const tags = [d.primary ? t('display.primary') : null, d.scaleFactor !== 1 ? `${Math.round(d.scaleFactor * 100)} %` : null]
-      .filter(Boolean)
-      .join(' · ');
-    b.append(el('span', 'dName', d.label), el('span', 'dRes', `${d.width} × ${d.height}${tags ? ' · ' + tags : ''}`));
-    b.addEventListener('click', async () => {
-      config = await window.dash.snapToDisplay(d.id);
-      syncSettings();
-      buildDisplayList();
-      drawNetSpark();
-    });
-    list.appendChild(b);
-  }
 }
 
-$('resList').addEventListener('click', async (e) => {
-  const b = e.target.closest('.chip');
-  if (!b) return;
-  config = await window.dash.setResolution({ width: Number(b.dataset.w), height: Number(b.dataset.h) });
-  syncSettings();
-  drawNetSpark();
-});
+/** Parts of the config that change what the dashboard measures or draws. */
+const layoutKey = (c) => [c.zoom, c.coverTaskbar, c.display?.id, c.bounds?.width, c.bounds?.height].join();
 
-$('zooms').addEventListener('click', async (e) => {
-  const b = e.target.closest('.chip');
-  if (!b) return;
-  config = await window.dash.setZoom(Number(b.dataset.z));
-  syncSettings();
-  // Zoom changes the viewport size: the SVGs must be redrawn.
-  drawNetSpark();
-  if (!$('chartOv').hidden) loadChart();
-});
-
-$('intervals').addEventListener('click', async (e) => {
-  const b = e.target.closest('.chip');
-  if (!b) return;
-  config = await window.dash.setRefresh(Number(b.dataset.ms));
-  syncSettings();
-});
-
-$('coverTgl').addEventListener('change', async (e) => {
-  config = await window.dash.setCoverTaskbar(e.target.checked);
-});
-
-$('autoTgl').addEventListener('change', async (e) => {
-  // Set the box back to the state actually applied: if Windows refuses the
-  // registry write, it must not stay checked.
-  e.target.checked = await window.dash.setAutoLaunch(e.target.checked);
+// A setting changed, here or in the settings window.
+window.dash.onConfig((next) => {
+  const prev = config;
+  config = next;
+  if ((next.theme || 'dark') !== document.documentElement.dataset.theme) applyTheme(next.theme || 'dark');
+  if (next.timeFormat !== prev.timeFormat) redrawAll();
+  // Zoom or size changed: the SVGs must be redrawn.
+  if (layoutKey(next) !== layoutKey(prev)) {
+    drawNetSpark();
+    if (!$('chartOv').hidden) loadChart();
+  }
 });
 
 /* ---------------- night mode ---------------- */
 
 const hhmm = (ms) => fmtTime(ms, { hour: 'numeric', minute: '2-digit' });
-let lastNight = null;
 
-function renderNight({ on, dim, from, until, current }) {
+// The dim itself; the explanation of the night window is in the settings window.
+window.dash.onNight(({ on, dim }) => {
   $('nightVeil').style.opacity = on ? String(dim) : '0';
-  const span = from ? `${hhmm(from)} → ${until ? hhmm(until) : '?'}` : t('night.until', { time: hhmm(until) });
-  const city = config.weatherSite?.label || t('night.theCity');
-  $('nightHint').textContent = until || from
-    ? t('night.line', { when: t(current ? 'night.current' : 'night.next'), span, city })
-    : t(config.weatherSite ? 'night.unknown' : 'night.noCity');
-}
-
-window.dash.onNight((n) => {
-  lastNight = n;
-  renderNight(n);
-});
-
-$('nightTgl').addEventListener('change', async (e) => {
-  config = await window.dash.setNight({ enabled: e.target.checked });
-  syncSettings();
-});
-
-$('nightDims').addEventListener('click', async (e) => {
-  const b = e.target.closest('.chip');
-  if (!b) return;
-  config = await window.dash.setNight({ dim: Number(b.dataset.dim) });
-  syncSettings();
-});
-
-/* ---------------- weather city ---------------- */
-
-let siteTimer;
-$('siteSearch').addEventListener('input', (e) => {
-  clearTimeout(siteTimer);
-  const q = e.target.value.trim();
-  if (q.length < 2) { $('siteResults').innerHTML = ''; return; }
-  siteTimer = setTimeout(async () => {
-    const places = await window.dash.searchPlaces(q);
-    const ul = $('siteResults');
-    ul.innerHTML = '';
-    for (const p of places) {
-      const li = el('li');
-      li.append(el('span', 'rsSym', p.label), el('span', 'rsVs', p.detail));
-      li.addEventListener('click', async () => {
-        config = await window.dash.setWeatherSite(p);
-        $('siteSearch').value = '';
-        ul.innerHTML = '';
-        syncSettings();
-      });
-      ul.appendChild(li);
-    }
-    if (!places.length) ul.appendChild(el('li', 'rsNone', t('settings.noCity')));
-  }, 350);
 });
 
 /* ---------------- adding rows ---------------- */
@@ -1116,11 +990,9 @@ function applyStaticTexts() {
   for (const e of document.querySelectorAll('[data-i18n-placeholder]')) e.placeholder = t(e.dataset.i18nPlaceholder);
 }
 
-/** Switches the page to `lang`/`locale` and redraws everything from the last data received. */
-function applyLanguage({ lang, locale }) {
-  i18n.setLanguage(lang, locale);
+/** Redraws everything from the last data received (language or time format changed). */
+function redrawAll() {
   numFormats.clear();
-  applyStaticTexts();
   tickClock();
   renderMarkets();
   applyQuotes(lastQuotes);
@@ -1128,23 +1000,25 @@ function applyLanguage({ lang, locale }) {
   if (lastSys) renderSys(lastSys);
   drawNetSpark();
   if (lastWeather) renderWeatherEvent(lastWeather);
-  if (lastNight) renderNight(lastNight);
   if (!$('chartOv').hidden) loadChart();
   if (!$('addOv').hidden) buildMetalPicker();
-  if (!$('setOv').hidden) buildDisplayList();
   if (detail) renderDetail();
   if (LARGE_MQ.matches) drawCardCharts();
   drawWeatherBg();
   wxBuilt = null;
   renderWeatherDetail();
   disarmPurge();
-  syncSettings();
 }
 
-$('languages').addEventListener('click', async (e) => {
-  const b = e.target.closest('.chip');
-  if (!b) return;
-  const res = await window.dash.setLanguage(b.dataset.lang);
+/** Switches the page to `lang`/`locale`. */
+function applyLanguage({ lang, locale }) {
+  i18n.setLanguage(lang, locale);
+  applyStaticTexts();
+  redrawAll();
+}
+
+// Language picked in the settings window.
+window.dash.onLanguage((res) => {
   config.language = res.setting;
   applyLanguage(res);
 });
@@ -1481,7 +1355,7 @@ function renderAstro(d) {
 }
 
 // "4 h" rather than "04 h": French CLDR pads the hour even in numeric form.
-const cityHour = (h) => new Date(2000, 0, 1, h).toLocaleTimeString(i18n.locale, { hour: 'numeric' }).replace(/^0(\d)/, '$1');
+const cityHour = (h) => fmtTime(new Date(2000, 0, 1, h), { hour: 'numeric' }).replace(/^0(\d)/, '$1');
 let lastHours = [];
 
 /** Next 12 hours (large screens): hour of the city, icon, temperature, rain chance. */
@@ -1522,9 +1396,8 @@ async function openWeather() {
     window.dash.openWeatherMap();
     return;
   }
-  await openSettings();
-  $('siteSearch').scrollIntoView({ block: 'center' });
-  $('siteSearch').focus();
+  // No city yet: the settings window opens on the city search.
+  window.dash.openSettings('city');
 }
 $('weather').addEventListener('click', openWeather);
 for (const id of ['wMain', 'wChart']) {

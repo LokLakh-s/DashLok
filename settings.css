@@ -1,0 +1,50 @@
+/* Settings window: an ordinary desktop window, not the 960 x 640 panel the
+ * dashboard is sized for. Colours, chips and switches come from style.css; only
+ * the page itself is redefined here. 1rem = 14 px (the dashboard's 16 px is
+ * tuned for a 12.8 px/mm panel). */
+
+html { font-size: 14px; }
+html, body { height: auto; min-height: 100%; overflow: visible; }
+body { overflow-y: auto; }
+
+.sPage {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex; flex-direction: column; gap: 0.9rem;
+}
+
+.sCard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.sTitle {
+  font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 0.7rem;
+}
+
+/* Spacing between a control and the label that follows it. */
+.fLabel { margin-top: 0.1rem; }
+.fLabel + .chips { margin-bottom: 0.9rem; }
+.sCard .chips:last-child, .sCard .dispList:last-child { margin-bottom: 0; }
+.sGap { margin-top: 0.9rem; }
+.siteNow { color: var(--txt); font-weight: 600; letter-spacing: 0; }
+
+/* The first switch of a card sits right under its title: no rule above it. */
+.switchRow { margin-top: 0.4rem; padding-top: 0.7rem; }
+.switchRow.first { margin-top: 0; padding-top: 0; border-top: none; }
+.dispList + .switchRow { margin-top: 0.7rem; }
+
+/* Night dimming levels do nothing while the mode is off. */
+.sCard.off .chips { opacity: 0.45; pointer-events: none; }
+
+#siteResults:empty { margin-top: 0; }
+#siteResults { margin-bottom: 0; }
+
+.hint { margin-top: 0.5rem; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
