@@ -1,6 +1,6 @@
 {
   "name": "dashlok",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "Dashboard for secondary displays: markets (metals, currencies, crypto), weather and system monitoring",
   "main": "main.js",
   "author": "Klakh",
