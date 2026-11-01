@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="build/logo.png" width="160" alt="Klakboard">
+  <img src="build/logo.png" width="160" alt="DashLok">
 </p>
 
-<h1 align="center">Klakboard</h1>
+<h1 align="center">DashLok</h1>
 
 <p align="center">
   A dashboard for the small screen next to your monitor:<br>
@@ -10,12 +10,12 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-dark.png" width="720" alt="Klakboard on a 960 × 640 screen: metals, currencies and crypto badges with 12-hour sparklines, weather card with the Moon and the Sun, CPU cores, RAM, GPU and network panels with the ping">
+  <img src="docs/screenshots/dashboard-dark.png" width="720" alt="DashLok on a 960 × 640 screen: metals, currencies and crypto badges with 12-hour sparklines, weather card with the Moon and the Sun, CPU cores, RAM, GPU and network panels with the ping">
 </p>
 
 ---
 
-Klakboard is a frameless desktop app that lives in the notification area and
+DashLok (formerly Klakboard) is a frameless desktop app that lives in the notification area and
 covers the secondary screen of your choice, above the taskbar. It was designed
 for a 3.6-inch 960 × 640 panel (about 325 PPI) and adapts to bar and portrait
 screens, and to ordinary monitors with more curves and forecasts; resolution
@@ -105,25 +105,25 @@ second screen. The layout follows the shape of the screen:
   <img src="docs/screenshots/dashboard-light-fr.png" width="360" alt="Light theme, in French">
 </p>
 
-On first launch Klakboard covers such a secondary screen by itself (960 × 640
+On first launch DashLok covers such a secondary screen by itself (960 × 640
 first, then the smallest small panel or bar screen); ordinary monitors are only
 used when picked in *Full screen on…*.
 
 Small "sensor panel" screens sold with their own software and driven over a
-USB serial link are not displays for the system: Klakboard cannot use them.
+USB serial link are not displays for the system: DashLok cannot use them.
 
 ## Install
 
-From the [latest release](https://github.com/LokLakh-s/Klakboard/releases/latest):
+From the [latest release](https://github.com/LokLakh-s/DashLok/releases/latest):
 
 | System | File | First launch |
 |---|---|---|
-| Windows 10/11 | `Klakboard.Setup.<version>.exe` | Not code-signed: SmartScreen asks for confirmation (*More info* → *Run anyway*) |
-| macOS 12+, Apple silicon | `Klakboard-<version>-arm64.dmg` | Not notarized: *System Settings* → *Privacy & Security* → *Open Anyway* |
-| macOS 12+, Intel | `Klakboard-<version>-x64.dmg` | Same as above |
-| Linux x64 | `Klakboard-<version>-x86_64.AppImage` (make it executable) or `Klakboard-<version>-amd64.deb` | — |
+| Windows 10/11 | `DashLok.Setup.<version>.exe` | Not code-signed: SmartScreen asks for confirmation (*More info* → *Run anyway*) |
+| macOS 12+, Apple silicon | `DashLok-<version>-arm64.dmg` | Not notarized: *System Settings* → *Privacy & Security* → *Open Anyway* |
+| macOS 12+, Intel | `DashLok-<version>-x64.dmg` | Same as above |
+| Linux x64 | `DashLok-<version>-x86_64.AppImage` (make it executable) or `DashLok-<version>-amd64.deb` | — |
 
-On Linux, Klakboard runs under XWayland: native Wayland does not let an app
+On Linux, DashLok runs under XWayland: native Wayland does not let an app
 place its window on a given screen nor keep it on top. GNOME only shows the
 tray icon with the AppIndicator extension; without it, the menu still opens
 with a right click in the dashboard.
@@ -132,7 +132,7 @@ To check a download, compare it with `SHA256SUMS` in the release, or verify its
 build provenance with the GitHub CLI:
 
 ```bash
-gh attestation verify Klakboard.Setup.<version>.exe -R LokLakh-s/Klakboard
+gh attestation verify DashLok.Setup.<version>.exe -R LokLakh-s/DashLok
 ```
 
 ## Usage
@@ -150,16 +150,16 @@ a right click anywhere in the dashboard (long press on a touch screen), or the
 
 ## Updates
 
-Klakboard checks this repository's releases every 30 minutes and shows a
+DashLok checks this repository's releases every 30 minutes and shows a
 notification; right-click the icon → *Install the update*.
 
 On **Windows** it installs the update itself:
 
 - **Same Electron version**: only the app archive (`app-electron<major>.asar`)
-  is downloaded; a small helper swaps it once Klakboard has closed, then
-  restarts it. Log: `%TEMP%\klakboard-update.log`.
+  is downloaded; a small helper swaps it once DashLok has closed, then
+  restarts it. Log: `%TEMP%\dashlok-update.log`.
 - **New Electron version**: the archive would not run on the old engine, so
-  Klakboard downloads the full installer and runs it.
+  DashLok downloads the full installer and runs it.
 
 Every download is checked against the SHA-256 digest published by GitHub.
 
@@ -183,12 +183,13 @@ All free, **no API key**. Requests go out from the main process, with a
   price shown comes from gold-api, and the chart is scaled by
   `spot / last close` so that it ends exactly on that price.
 - Yahoo Finance has no official public API: it may change or throttle without
-  notice. Klakboard then keeps showing the last known prices.
+  notice. DashLok then keeps showing the last known prices.
 
 **Privacy** — no account, no telemetry. The only network traffic is to the
 sources above (the ping included) and to the GitHub API for updates. Settings stay on your computer, in
-`dashboard.json`: `%APPDATA%\Klakboard` on Windows, `~/Library/Application
-Support/Klakboard` on macOS, `~/.config/Klakboard` on Linux.
+`dashboard.json`: `%APPDATA%\DashLok` on Windows, `~/Library/Application
+Support/DashLok` on macOS, `~/.config/DashLok` on Linux. An install that predates
+the rename (the app was called Klakboard until 1.10) keeps its `Klakboard` folder.
 
 ## Build from source
 
@@ -208,7 +209,8 @@ metrics of each one; pull requests also build the packages of the three systems.
 **Releasing** — bump `version` in `package.json` and push to `main`. The
 [Release workflow](.github/workflows/release.yml) runs the tests, builds the
 Windows, macOS and Linux packages on GitHub-hosted runners, then creates the
-`klakboard-v<version>` tag and release with notes, checksums and a build
+`klakboard-v<version>` tag (the name from before the rename, which installed
+versions look for) and release with notes, checksums and a build
 provenance attestation.
 
 ## Architecture

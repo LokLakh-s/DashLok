@@ -15,7 +15,7 @@
 const { version } = require('./package.json');
 const { t } = require('./i18n');
 
-const UA = `Klakboard/${version}`; // Yahoo blocks curl/python, not custom user agents
+const UA = `DashLok/${version}`; // Yahoo blocks curl/python, not custom user agents
 const YQ = 'https://query1.finance.yahoo.com';
 // Public market data only: unlike api.binance.com, this domain is not blocked
 // in countries where Binance does not operate.

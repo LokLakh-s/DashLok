@@ -72,9 +72,9 @@ test('update: archive for the installed engine, otherwise installer', () => {
     assets: names.map((name, i) => ({ name, url: `u${i}`, size: 1, digest: null })),
   });
   const releases = [
-    rel('1.4.0', 'app-electron44.asar', 'Klakboard.Setup.1.4.0.exe'),
-    rel('1.3.0', 'app-electron33.asar', 'app.asar', 'Klakboard.Setup.1.3.0.exe'),
-    rel('1.2.5', 'app.asar', 'Klakboard.Setup.1.2.5.exe'),
+    rel('1.4.0', 'app-electron44.asar', 'DashLok.Setup.1.4.0.exe'),
+    rel('1.3.0', 'app-electron33.asar', 'app.asar', 'DashLok.Setup.1.3.0.exe'),
+    rel('1.2.5', 'app.asar', 'DashLok.Setup.1.2.5.exe'),
   ];
   assert.deepEqual(
     [pickUpdate(releases, '1.2.5', '33').version, pickUpdate(releases, '1.2.5', '33').kind],
@@ -84,6 +84,18 @@ test('update: archive for the installed engine, otherwise installer', () => {
   assert.equal(pickUpdate(releases, '1.4.0', '44'), null);
   assert.equal(pickUpdate(releases.slice(1), '1.2.5', '33').kind, 'asar');
   assert.equal(pickUpdate(releases.slice(1), '1.2.5', '33').asset.name, 'app-electron33.asar');
+});
+
+test('update: releases and installers from before the rename (Klakboard) are still understood', () => {
+  const { pickUpdate } = require('../updates');
+  const rel = (tag, ...names) => ({
+    tag_name: tag, draft: false, prerelease: false,
+    assets: names.map((name, i) => ({ name, url: `u${i}`, size: 1, digest: null })),
+  });
+  // An old installer name is found, as is a future `dashlok-v` tag.
+  assert.equal(pickUpdate([rel('klakboard-v1.9.0', 'Klakboard.Setup.1.9.0.exe')], '1.8.0', '44').asset.name, 'Klakboard.Setup.1.9.0.exe');
+  assert.equal(pickUpdate([rel('dashlok-v2.0.0', 'app-electron44.asar')], '1.11.0', '44').version, '2.0.0');
+  assert.equal(pickUpdate([rel('other-v9.0.0', 'app-electron44.asar')], '1.11.0', '44'), null);
 });
 
 test('download digest', () => {
@@ -230,7 +242,7 @@ test('translation placeholders and fallback', () => {
   const i18n = require('../i18n');
   i18n.setLanguage('fr');
   assert.equal(i18n.t('upd.message', { version: '2.0.0', current: '1.6.0' }),
-    'Klakboard 2.0.0 est disponible (version actuelle : 1.6.0).');
+    'DashLok 2.0.0 est disponible (version actuelle : 1.6.0).');
   assert.equal(i18n.t('no.such.key'), 'no.such.key');
   i18n.setLanguage('xx');
   assert.equal(i18n.lang, 'en');
@@ -345,9 +357,9 @@ test('Linux start at login: XDG autostart entry, quoted command', () => {
   const autostart = require('../autostart');
   const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'klakboard-autostart-')), 'autostart');
   assert.equal(autostart.isEnabled(dir), false);
-  autostart.setEnabled(true, ['/home/me/Apps/Klakboard 1.8.0.AppImage', '--ozone-platform=x11'], dir);
+  autostart.setEnabled(true, ['/home/me/Apps/DashLok 1.8.0.AppImage', '--ozone-platform=x11'], dir);
   const entry = fs.readFileSync(path.join(dir, 'klakboard.desktop'), 'utf8');
-  assert.match(entry, /^Exec="\/home\/me\/Apps\/Klakboard 1\.8\.0\.AppImage" --ozone-platform=x11$/m);
+  assert.match(entry, /^Exec="\/home\/me\/Apps\/DashLok 1\.8\.0\.AppImage" --ozone-platform=x11$/m);
   assert.equal(autostart.isEnabled(dir), true);
   autostart.setEnabled(false, [], dir);
   assert.equal(autostart.isEnabled(dir), false);
@@ -357,12 +369,12 @@ test('Linux start at login: XDG autostart entry, quoted command', () => {
 test('update outside Windows: the release page', () => {
   const { pickUpdate } = require('../updates');
   const releases = [
-    { tag_name: 'klakboard-v1.8.0', html_url: 'https://github.com/LokLakh-s/Klakboard/releases/tag/klakboard-v1.8.0',
+    { tag_name: 'klakboard-v1.8.0', html_url: 'https://github.com/LokLakh-s/DashLok/releases/tag/klakboard-v1.8.0',
       draft: false, prerelease: false, assets: [] },
     { tag_name: 'klakboard-v1.7.0', html_url: 'https://github.com/x', draft: false, prerelease: false, assets: [] },
   ];
   assert.deepEqual(pickUpdate(releases, '1.7.0', '44', 'darwin'),
-    { version: '1.8.0', kind: 'page', url: 'https://github.com/LokLakh-s/Klakboard/releases/tag/klakboard-v1.8.0' });
+    { version: '1.8.0', kind: 'page', url: 'https://github.com/LokLakh-s/DashLok/releases/tag/klakboard-v1.8.0' });
   assert.equal(pickUpdate(releases, '1.8.0', '44', 'linux'), null);
   assert.equal(pickUpdate(releases, '1.7.0', '44', 'win32'), null, 'no file for Windows in this release');
 });

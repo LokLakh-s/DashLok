@@ -12,7 +12,7 @@ const { spawnLines } = require('./spawn-lines');
 
 const ps = (script) => ['-NoProfile', '-NonInteractive', '-Command', script];
 
-// Each loop exits by itself when Klakboard is gone (crash, killed process), so
+// Each loop exits by itself when DashLok is gone (crash, killed process), so
 // it never keeps running in the background.
 const netScript = (pid, tickMs) => `
 $ErrorActionPreference = 'SilentlyContinue'

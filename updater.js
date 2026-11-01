@@ -1,8 +1,8 @@
 /**
- * Swaps app.asar, run AFTER Klakboard has closed.
+ * Swaps app.asar, run AFTER DashLok has closed.
  *
- * Started by main.js through Klakboard.exe in Node mode (ELECTRON_RUN_AS_NODE),
- * from a copy in the temp folder. Klakboard.exe is a GUI program: unlike a
+ * Started by main.js through DashLok.exe in Node mode (ELECTRON_RUN_AS_NODE),
+ * from a copy in the temp folder. DashLok.exe is a GUI program: unlike a
  * cmd.exe script, it opens no console window.
  *
  * Arguments: <pid to wait for> <app.asar.new> <app.asar> <exe to restart> <log>
@@ -33,7 +33,7 @@ const alive = (p) => {
 };
 
 (async () => {
-  log(`attente de la fermeture de Klakboard (pid ${pid})`);
+  log(`attente de la fermeture de DashLok (pid ${pid})`);
   for (let i = 0; i < 120 && alive(Number(pid)); i++) await sleep(500);
 
   // Chromium subprocesses may keep app.asar open for a moment.
@@ -51,7 +51,7 @@ const alive = (p) => {
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE;
   spawn(exe, [], { detached: true, stdio: 'ignore', env }).unref();
-  log('Klakboard relancee');
+  log('DashLok relancee');
 
   try {
     fs.unlinkSync(__filename);

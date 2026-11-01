@@ -1,17 +1,17 @@
 {
-  "name": "klakboard",
-  "version": "1.10.2",
+  "name": "dashlok",
+  "version": "1.11.0",
   "description": "Dashboard for secondary displays: markets (metals, currencies, crypto), weather and system monitoring",
   "main": "main.js",
   "author": "Klakh",
   "license": "MIT",
-  "homepage": "https://github.com/LokLakh-s/Klakboard#readme",
+  "homepage": "https://github.com/LokLakh-s/DashLok#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LokLakh-s/Klakboard.git"
+    "url": "https://github.com/LokLakh-s/DashLok.git"
   },
   "bugs": {
-    "url": "https://github.com/LokLakh-s/Klakboard/issues"
+    "url": "https://github.com/LokLakh-s/DashLok/issues"
   },
   "scripts": {
     "start": "electron .",
@@ -24,7 +24,7 @@
   },
   "build": {
     "appId": "com.klakh.klakboard",
-    "productName": "Klakboard",
+    "productName": "DashLok",
     "publish": null,
     "directories": {
       "output": "dist"
@@ -87,7 +87,7 @@
       "extendInfo": {
         "LSUIElement": true
       },
-      "artifactName": "Klakboard-${version}-${arch}.${ext}"
+      "artifactName": "DashLok-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -100,7 +100,7 @@
       "executableArgs": [
         "--ozone-platform=x11"
       ],
-      "artifactName": "Klakboard-${version}-${arch}.${ext}"
+      "artifactName": "DashLok-${version}-${arch}.${ext}"
     }
   }
 }

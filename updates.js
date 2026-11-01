@@ -1,5 +1,5 @@
 /**
- * Looks for new versions in the GitHub releases (tags klakboard-v<semver>). The
+ * Looks for new versions in the GitHub releases (tags klakboard-v<semver>, see TAG_PREFIXES). The
  * repository is public: the token, if any, is optional.
  *
  * A release carries the installer and the app archive, named after the Electron
@@ -12,13 +12,15 @@ const crypto = require('crypto');
 const fs = require('fs');
 const { t } = require('./i18n');
 
-const REPO = 'LokLakh-s/Klakboard';
-const TAG_PREFIX = 'klakboard-v';
+const REPO = 'LokLakh-s/DashLok';
+// The app was called Klakboard until 1.10.x: releases keep the `klakboard-v` tags, which installed versions look
+// for. `dashlok-v` is accepted too, for the day the tags change.
+const TAG_PREFIXES = ['klakboard-v', 'dashlok-v'];
 const asarName = (electronMajor) => `app-electron${electronMajor}.asar`;
-const SETUP_RE = /^Klakboard\.Setup\.\d+\.\d+\.\d+\.exe$/;
+const SETUP_RE = /^(DashLok|Klakboard)\.Setup\.\d+\.\d+\.\d+\.exe$/;
 
 function authHeaders(accept, token) {
-  const headers = { 'User-Agent': 'Klakboard', Accept: accept };
+  const headers = { 'User-Agent': 'DashLok', Accept: accept };
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
 }
@@ -48,8 +50,9 @@ const assetOf = (a) => ({ name: a.name, url: a.url, size: a.size, digest: a.dige
 function pickUpdate(releases, currentVersion, electronMajor, platform = 'win32') {
   let best = null;
   for (const r of releases) {
-    if (r.draft || r.prerelease || !r.tag_name.startsWith(TAG_PREFIX)) continue;
-    const version = r.tag_name.slice(TAG_PREFIX.length);
+    const prefix = TAG_PREFIXES.find((p) => r.tag_name.startsWith(p));
+    if (r.draft || r.prerelease || !prefix) continue;
+    const version = r.tag_name.slice(prefix.length);
     if (!/^\d+\.\d+\.\d+$/.test(version) || !isNewer(version, currentVersion)) continue;
     if (best && !isNewer(version, best.version)) continue;
     if (platform !== 'win32') {

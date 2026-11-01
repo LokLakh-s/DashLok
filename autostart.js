@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// Named after the app's former name (Klakboard): an autostart entry enabled before the rename stays the same file.
 const FILE = 'klakboard.desktop';
 
 const autostartDir = (env = process.env) =>
@@ -22,7 +23,7 @@ function desktopEntry(command) {
   return [
     '[Desktop Entry]',
     'Type=Application',
-    'Name=Klakboard',
+    'Name=DashLok',
     `Exec=${command.map(quoteArg).join(' ')}`,
     'X-GNOME-Autostart-enabled=true',
     '',

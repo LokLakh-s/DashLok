@@ -3,7 +3,9 @@
 # own GitHub-hosted runner, natively.
 #
 # Release files read by the Windows in-app updater (names must not change):
-#   Klakboard.Setup.<version>.exe   full installer (first install, Electron upgrade)
+#   DashLok.Setup.<version>.exe   full installer (first install, Electron upgrade); installs up to 1.10
+#                                 only know the former name Klakboard.Setup.<version>.exe, which they use
+#                                 only when the release has no archive for their Electron major
 #   app-electron<major>.asar        app archive, only runs on that Electron major
 # macOS and Linux copies only open the release page.
 name: Release
@@ -75,7 +77,7 @@ jobs:
         shell: bash
         run: |
           mkdir out
-          cp "dist/Klakboard Setup $VERSION.exe" "out/Klakboard.Setup.$VERSION.exe"
+          cp "dist/DashLok Setup $VERSION.exe" "out/DashLok.Setup.$VERSION.exe"
           cp dist/win-unpacked/resources/app.asar "out/app-electron$ELECTRON.asar"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -154,7 +156,7 @@ jobs:
         run: |
           prev=$(git describe --tags --abbrev=0 --match 'klakboard-v*' 2>/dev/null || true)
           {
-            echo "Klakboard $VERSION (Electron $ELECTRON)."
+            echo "DashLok $VERSION (Electron $ELECTRON)."
             echo
             echo "## Changes"
             echo
@@ -162,14 +164,14 @@ jobs:
             echo
             echo "## Install"
             echo
-            echo "- **Windows**: run \`Klakboard.Setup.$VERSION.exe\`. The installer is not code-signed:"
+            echo "- **Windows**: run \`DashLok.Setup.$VERSION.exe\`. The installer is not code-signed:"
             echo "  SmartScreen asks for confirmation (*More info* → *Run anyway*). Installed copies"
             echo "  offer the update themselves (tray icon → right click)."
-            echo "- **macOS** (12 or later): \`Klakboard-$VERSION-arm64.dmg\` for Apple silicon,"
-            echo "  \`Klakboard-$VERSION-x64.dmg\` for Intel Macs. Not notarized: on first launch,"
+            echo "- **macOS** (12 or later): \`DashLok-$VERSION-arm64.dmg\` for Apple silicon,"
+            echo "  \`DashLok-$VERSION-x64.dmg\` for Intel Macs. Not notarized: on first launch,"
             echo "  *System Settings* → *Privacy & Security* → *Open Anyway*."
-            echo "- **Linux** (x64): \`Klakboard-$VERSION-x86_64.AppImage\` (make it executable),"
-            echo "  or \`Klakboard-$VERSION-amd64.deb\`. GNOME needs the AppIndicator extension for"
+            echo "- **Linux** (x64): \`DashLok-$VERSION-x86_64.AppImage\` (make it executable),"
+            echo "  or \`DashLok-$VERSION-amd64.deb\`. GNOME needs the AppIndicator extension for"
             echo "  the tray icon; the menu also opens with a right click in the dashboard."
             echo
             echo "Files are listed in \`SHA256SUMS\` and carry a build provenance attestation:"
@@ -177,4 +179,4 @@ jobs:
           } > notes.md
           cat notes.md
       - name: Create tag and release
-        run: gh release create "$TAG" out/* --target "$GITHUB_SHA" --title "Klakboard $VERSION" --notes-file notes.md
+        run: gh release create "$TAG" out/* --target "$GITHUB_SHA" --title "DashLok $VERSION" --notes-file notes.md

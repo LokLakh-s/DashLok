@@ -71,6 +71,11 @@ function quitApp() {
   app.quit();
 }
 
+// Until 1.10.x the app was called Klakboard, and its settings, history and update token live in that folder: an
+// install that predates the rename keeps using it (the app name, hence the default folder, is now DashLok).
+const legacyUserData = path.join(app.getPath('appData'), 'Klakboard');
+if (fs.existsSync(legacyUserData)) app.setPath('userData', legacyUserData);
+
 const configPath = () => path.join(app.getPath('userData'), 'dashboard.json');
 
 // Deep copy: the config mutates its objects (items, netTotals) in place.
@@ -275,7 +280,7 @@ function showMenu() {
 function refreshTrayMenu() {
   if (!tray) return;
   tray.setContextMenu(buildTrayMenu());
-  tray.setToolTip(pendingUpdate ? t('tray.tooltipUpdate', { version: pendingUpdate.version }) : 'Klakboard');
+  tray.setToolTip(pendingUpdate ? t('tray.tooltipUpdate', { version: pendingUpdate.version }) : 'DashLok');
 }
 
 function createTray() {
@@ -283,7 +288,7 @@ function createTray() {
   const file = { win32: 'icon.ico', darwin: 'tray.png' }[process.platform] || 'tray-linux.png';
   const icon = nativeImage.createFromPath(path.join(__dirname, 'build', file));
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
-  tray.setToolTip('Klakboard');
+  tray.setToolTip('DashLok');
   refreshTrayMenu();
   tray.on('click', toggleWindow);
 }
@@ -453,7 +458,7 @@ async function checkForUpdates({ manual = false } = {}) {
   }
   if (!update) {
     if (manual) {
-      dialog.showMessageBox({ type: 'info', title: 'Klakboard', message: t('upd.upToDate', { version: APP_VERSION }) });
+      dialog.showMessageBox({ type: 'info', title: 'DashLok', message: t('upd.upToDate', { version: APP_VERSION }) });
     }
     return;
   }
@@ -474,12 +479,12 @@ async function checkForUpdates({ manual = false } = {}) {
 /**
  * Replaces resources/app.asar with the new version. The current file is locked
  * while the app runs: updater.js (copied out of the archive) waits for the
- * process to exit, swaps the file, then restarts Klakboard.
+ * process to exit, swaps the file, then restarts DashLok.
  */
 function swapAndRelaunch(staged, target) {
-  const helper = path.join(os.tmpdir(), 'klakboard-updater.js');
+  const helper = path.join(os.tmpdir(), 'dashlok-updater.js');
   fs.writeFileSync(helper, fs.readFileSync(path.join(__dirname, 'updater.js')));
-  const logFile = path.join(os.tmpdir(), 'klakboard-update.log');
+  const logFile = path.join(os.tmpdir(), 'dashlok-update.log');
   spawn(process.execPath, [helper, String(process.pid), staged, target, process.execPath, logFile], {
     detached: true,
     stdio: 'ignore',
@@ -556,10 +561,11 @@ async function installUpdate(update = pendingUpdate) {
 /* ---------------- lifecycle ---------------- */
 
 // Windows only shows notifications for a known AppUserModelID: the one of the
-// shortcut created by the installer, i.e. build.appId.
+// shortcut created by the installer, i.e. build.appId (kept from the Klakboard days, so that the
+// installed shortcut and its notifications carry over).
 if (process.platform === 'win32') app.setAppUserModelId('com.klakh.klakboard');
 
-// Single instance: starting Klakboard while it runs (or while an update
+// Single instance: starting DashLok while it runs (or while an update
 // restarts it) shows the existing window instead of opening another one.
 const isPrimaryInstance = app.requestSingleInstanceLock();
 if (!isPrimaryInstance) app.exit(0);
