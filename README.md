@@ -1,115 +1,140 @@
 <p align="center">
-  <img src="build/logo.png" width="160" alt="DashLok">
+  <img src="build/logo.png" width="140" alt="DashLok">
 </p>
 
 <h1 align="center">DashLok</h1>
 
 <p align="center">
-  A dashboard for the small screen next to your monitor:<br>
-  markets, weather and system load at a glance.
+  <strong>Markets, weather and system load,<br>on the small screen next to your monitor.</strong>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-dark.png" width="720" alt="DashLok on a 960 × 640 screen: metals, currencies and crypto badges with 12-hour sparklines, weather card with the Moon and the Sun, CPU cores, RAM, GPU and network panels with the ping">
+  Free and open source (MIT) · no account · no telemetry<br>
+  Windows · macOS · Linux · English and French
+</p>
+
+<p align="center">
+  <a href="https://github.com/LokLakh-s/DashLok/releases/latest"><b>Download</b></a> ·
+  <a href="#features">Features</a> ·
+  <a href="#any-screen">Any screen</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#roadmap">Roadmap</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-dark.png" width="760" alt="DashLok on a 960 × 640 screen: metals, currencies and crypto badges with 12-hour sparklines, weather card with the Moon and the Sun, CPU cores, RAM, GPU and network panels with the ping">
 </p>
 
 ---
 
-DashLok (formerly Klakboard) is a frameless desktop app that lives in the notification area and
-covers the secondary screen of your choice, above the taskbar. It was designed
-for a 3.6-inch 960 × 640 panel (about 325 PPI) and adapts to bar and portrait
-screens, and to ordinary monitors with more curves and forecasts; resolution
-and zoom are adjustable.
+DashLok turns a spare screen into an always-on dashboard. It lives in the
+notification area and covers the screen of your choice, above the taskbar:
+prices on the left, the machine on the right, the weather underneath. Nothing to
+log into, nothing to configure but a city.
 
-> **Status** — Windows 10/11, macOS 12+ and Linux (x64); interface in English
-> and French. The Windows version is the one used daily; macOS and Linux are
-> new in 1.8.0, feedback welcome in the issues.
+It was designed for a 3.6-inch, 960 × 640 panel (about 325 PPI) seen from 60 cm,
+so everything is big, high-contrast and readable at a glance. It adapts just as
+well to bar screens, portrait screens and ordinary monitors.
+
+> **Status** — Windows 10/11 is the version used daily. macOS 12+ and Linux
+> (x64) are built and tested on CI but still waiting for more real-world
+> feedback: [open an issue](https://github.com/LokLakh-s/DashLok/issues) if
+> something looks off on your machine.
 
 ## Features
 
-**Markets** — three badges per row, each with its 24-hour change and a 12-hour
-sparkline. A click opens a full-screen chart over 14 periods, from 1 hour to
-5 years.
+<table>
+<tr>
+<td width="33%" valign="top">
 
-- **Metals**: gold, silver, platinum, palladium, copper
-- **Currencies**: any pair among 26 currencies
-- **Crypto**: search the whole Binance catalog
+### Markets
+Three badges per row: price, 24-hour change and a 12-hour sparkline. A click
+opens a full chart over 14 periods, from 1 hour to 5 years.
 
-When a source stops answering, the badge keeps the last known price, greyed out
-after three missed cycles, and the status dot turns red (details in its tooltip).
+**Metals** · gold, silver, platinum, palladium, copper<br>
+**Currencies** · any pair among 26<br>
+**Crypto** · the whole Binance catalog
 
-**Weather** — current conditions and today's forecast for the city you pick:
-temperature, feels-like, min/max, rain, wind and gusts, thunderstorm risk
-(CAPE). Under the icon, when the card is tall enough: the Moon's phase and how
-much of it is lit (computed on your computer, mirrored south of the equator),
-sunrise and sunset in the city's time, and the day length. Behind them, a faded
-curve shows the next 24 hours; a click on it opens them hour by hour
-(temperature and feels-like, rain chance and amount, wind and gusts). The rest
-of the card opens the Windy map.
+If a source stops answering, the badge keeps the last price, greyed out, and the
+status dot turns red.
 
-**System** — refreshed every second, independently of the markets.
+</td>
+<td width="33%" valign="top">
 
-- Load per logical core (green → amber → red bars)
-- RAM used / total / available
-- GPU: load, memory, fan and temperature where available (NVIDIA everywhere,
-  AMD and Intel on Windows, AMD on Linux, Apple silicon and AMD on macOS)
-- Network: live rates, ping to [Quad9](https://quad9.net) (9.9.9.9), 90-second
-  history, totals (reset in two clicks)
+### Weather
+Conditions and forecast for the city you pick: temperature, feels-like, min/max,
+rain, wind and gusts, thunderstorm risk.
 
-A click on a system card opens its **history** over 1 minute, 10 minutes or
-1 hour, with values under the pointer: CPU total and one curve per core, RAM,
-GPU load, memory and temperature, network rates and ping with average and peak.
+The Moon's phase (computed on your machine), sunrise, sunset and day length sit
+under the icon. A faded curve behind shows the next 24 hours; click it for the
+hour-by-hour view. The rest of the card opens the Windy map.
 
-<p align="center">
-  <img src="docs/screenshots/detail-cpu.png" width="360" alt="CPU history: total load and one curve per core, with the values at the pointer">
-  <img src="docs/screenshots/detail-net-fr.png" width="360" alt="Network history in French: download and upload rates, ping, average and peak">
-</p>
+</td>
+<td width="33%" valign="top">
 
-**Comfort** — English and French (following the system, or picked in the
-settings), 12-hour (AM/PM) or 24-hour time, 7 muted themes, zoom from 100 to
-175 %, night mode (dims the screen from sunset to sunrise at the weather city),
-start at login.
+### System
+Refreshed every second.
 
-**Settings** — they open in their own window (tray menu → *Settings…*), apart
-from the dashboard: move it to any screen while the dashboard stays full screen
-on its small one. Changes apply to the dashboard at once.
+**CPU** · one bar per logical core<br>
+**RAM** · used, total, available<br>
+**GPU** · load, memory, fan, temperature<br>
+**Network** · live rates, ping to Quad9, 90-second history, totals
 
-**Screens** — the screen chosen in the settings is remembered. If it is missing
-(not detected yet at login, unplugged), the window waits hidden instead of
-covering your main screen, and comes back with it. In a normal window,
-DashLok remembers its position, size and whether it was maximized, and starts the
-same way.
+A click on a card opens its **history** over 1 min, 10 min or 1 h.
+
+</td>
+</tr>
+</table>
 
 <p align="center">
-  <img src="docs/screenshots/weather-detail.png" width="360" alt="Next 24 hours: temperature and feels-like, rain chance, wind and gusts, hour by hour">
-  <img src="docs/screenshots/chart.png" width="360" alt="Full-screen gold chart over one week">
+  <img src="docs/screenshots/detail-cpu.png" width="380" alt="CPU history: total load and one curve per core, with the values at the pointer">
+  <img src="docs/screenshots/weather-detail.png" width="380" alt="Next 24 hours: temperature and feels-like, rain chance, wind and gusts, hour by hour">
 </p>
 <p align="center">
-  <img src="docs/screenshots/settings.png" width="360" alt="Settings window: appearance, screen and window, night mode, weather, markets, application">
+  <img src="docs/screenshots/chart.png" width="380" alt="Full-screen gold chart over one week">
+  <img src="docs/screenshots/detail-net-fr.png" width="380" alt="Network history in French: download and upload rates, ping, average and peak">
 </p>
 
-### Which screens?
+### Made to live on a second screen
+
+- **Own settings window**: it opens apart from the dashboard (tray menu →
+  *Settings…*), so you can move it to your main screen while the dashboard stays
+  full screen on the small one. Changes apply at once.
+- **Remembers its place**: the chosen screen, and, in a normal window, its
+  position, size and whether it was maximized. If the screen is missing at login
+  (not detected yet, unplugged), the window waits hidden instead of covering
+  your main screen, and comes back with it.
+- **Night mode** dims the screen from sunset to sunrise at the weather city.
+- **7 muted themes**, zoom from 100 to 175 %, 12-hour or 24-hour time, English or
+  French (following the system, or picked).
+- **Start at login**, and updates from the tray menu.
+
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="340" alt="Settings window: appearance, screen and window, night mode, weather, markets, application">
+</p>
+
+## Any screen
 
 Any screen connected as a display (HDMI, DisplayPort, USB-C or DisplayLink):
 small 3.5 to 8-inch panels, bar screens, a spare monitor, a tablet used as a
 second screen. The layout follows the shape of the screen:
 
-- **landscape** panels close to 3:2 or 4:3 (960 × 640, 1024 × 600, 800 × 480…);
-- **bar** screens, 2.4:1 and wider (1920 × 480, 1920 × 440, 2560 × 720, 1280 × 400…);
-- **portrait** screens, 4:5 and narrower (480 × 800, 600 × 1024, 480 × 1920…);
-- **large** screens, from about 1500 × 850: the system cards show their history
-  curves, and the weather card the temperature over the next 24 hours and the
-  next 12 hours one by one.
+| Shape | Screens | Layout |
+|---|---|---|
+| **Landscape** | close to 3:2 or 4:3 (960 × 640, 1024 × 600, 800 × 480…) | the reference layout |
+| **Bar** | 2.4:1 and wider (1920 × 480, 2560 × 720, 1280 × 400…) | badges, weather and system side by side |
+| **Portrait** | 4:5 and narrower (480 × 800, 600 × 1024, 480 × 1920…) | one column |
+| **Large** | from about 1500 × 850 | history curves in the system cards, 24-hour temperature and next 12 hours one by one |
 
 <p align="center">
-  <img src="docs/screenshots/bar-1920x480.png" width="720" alt="Bar layout on a 1920 × 480 screen: badges, weather and system side by side">
+  <img src="docs/screenshots/bar-1920x480.png" width="760" alt="Bar layout on a 1920 × 480 screen: badges, weather and system side by side">
 </p>
 <p align="center">
-  <img src="docs/screenshots/large-1920x1080.png" width="720" alt="Large layout on a 1920 × 1080 monitor: history curves in the system cards, 24-hour temperature and hourly forecast">
+  <img src="docs/screenshots/large-1920x1080.png" width="760" alt="Large layout on a 1920 × 1080 monitor: history curves in the system cards, 24-hour temperature and hourly forecast">
 </p>
 <p align="center">
-  <img src="docs/screenshots/portrait-600x1024.png" width="240" alt="Portrait layout on a 600 × 1024 screen">
-  <img src="docs/screenshots/dashboard-light-fr.png" width="360" alt="Light theme, in French">
+  <img src="docs/screenshots/portrait-600x1024.png" width="250" alt="Portrait layout on a 600 × 1024 screen">
+  <img src="docs/screenshots/dashboard-light-fr.png" width="380" alt="Light theme, in French">
 </p>
 
 On first launch DashLok covers such a secondary screen by itself (960 × 640
@@ -262,12 +287,31 @@ inline script), and API data never goes through `innerHTML`. Settings are
 written to a temporary file then renamed, so a power cut cannot leave a
 truncated file; an unreadable file is set aside, never overwritten.
 
+## Contributing
+
+Bug reports, hardware reports (a GPU, a screen or a system that does not behave)
+and ideas are welcome in the [issues](https://github.com/LokLakh-s/DashLok/issues).
+Pull requests too: run `npm test` first, it needs no Electron. Code, comments and
+commit messages are in English.
+
 ## Roadmap
 
 1. ~~Public release~~ (1.6.0), ~~English and French, menu inside the window,
    bar and portrait layouts~~ (1.7.0), ~~macOS and Linux, GPU load for AMD and
    Intel~~ (1.8.0), ~~history views and large screens~~ (1.9.0).
-2. Next ideas are welcome in the issues.
+2. **Next** (in no particular order):
+   - **Run on as much hardware as possible**: every GPU vendor and sensor on
+     each system (load, memory, fan, temperature), ARM (Windows on ARM, Linux
+     arm64, Raspberry Pi class), older systems, and every kind of small or odd
+     screen (bars, portrait, 4:3, high-DPI, rotated).
+   - **macOS and Linux as first-class as Windows**: they are built and tested
+     on CI but have not run on a real Mac or Linux desktop yet. Checking them
+     on real machines (Wayland and X11, several desktops) comes first.
+   - **Free and open source, all the way**: MIT stays. No proprietary
+     dependency; bundled fonts and icons stay under free licences, and data
+     sources that need no account or key are preferred.
+   - ~~**A new README**~~: shorter, more visual, built around the screenshots.
+3. More ideas are welcome in the issues.
 
 The full review behind this plan, in French: [docs/AUDIT-2026-10-16.md](docs/AUDIT-2026-10-16.md).
 
